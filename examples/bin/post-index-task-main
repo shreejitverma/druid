@@ -39,8 +39,8 @@ def read_task_file(args):
 
 def add_basic_auth_header(args, req):
   if (args.user is not None):
-    basic_auth_encoded = base64.b64encode('%s:%s' % (args.user, args.password))
-    req.add_header("Authorization", "Basic %s" % basic_auth_encoded)
+    basic_auth_encoded = base64.b64encode(f'{args.user}:{args.password}')
+    req.add_header("Authorization", f"Basic {basic_auth_encoded}")
 
 # Keep trying until timeout_at, maybe die then
 def post_task(args, task_json, timeout_at):
@@ -70,9 +70,7 @@ def post_task(args, task_json, timeout_at):
       # If at first you don't succeed, try, try again!
       sleep_time = 5
       if not args.quiet:
-        extra = ''
-        if hasattr(e, 'read'):
-          extra = e.read().rstrip()
+        extra = e.read().rstrip() if hasattr(e, 'read') else ''
         sys.stderr.write("Waiting up to {0}s for indexing service [{1}] to become available. [Got: {2} {3}]".format(max(sleep_time, int(timeout_at - time.time())), args.url, str(e), extra).rstrip())
         sys.stderr.write("\n")
       time.sleep(sleep_time)
@@ -91,21 +89,18 @@ def await_task_completion(args, task_id, timeout_at):
     response_status_code = response_obj["status"]["statusCode"]
     if response_status_code in ['SUCCESS', 'FAILED']:
       return response_status_code
-    else:
-      if time.time() < timeout_at:
-        if not args.quiet:
-          sys.stderr.write("Task {0} still running...\n".format(task_id))
-        timeleft = timeout_at - time.time()
-        time.sleep(min(5, timeleft))
-      else:
-        raise Exception("Task {0} did not finish in time!".format(task_id))
+    if time.time() >= timeout_at:
+      raise Exception("Task {0} did not finish in time!".format(task_id))
+    if not args.quiet:
+      sys.stderr.write("Task {0} still running...\n".format(task_id))
+    timeleft = timeout_at - time.time()
+    time.sleep(min(5, timeleft))
 
 def raise_friendly_error(e):
   if isinstance(e, urllib2.HTTPError):
     text = e.read().strip()
-    reresult = re.search(r'<pre>(.*?)</pre>', text, re.DOTALL)
-    if reresult:
-      text = reresult.group(1).strip()
+    if reresult := re.search(r'<pre>(.*?)</pre>', text, re.DOTALL):
+      text = reresult[1].strip()
     raise Exception("HTTP Error {0}: {1}, check overlord log for more details.\n{2}".format(e.code, e.reason, text))
   raise e
 
@@ -123,13 +118,12 @@ def await_load_completion(args, datasource, timeout_at):
       sys.stderr.write("{0} loading complete! You may now query your data\n".format(datasource))
       return
     else:
-      if time.time() < timeout_at:
-        if not args.quiet:
-          sys.stderr.write("{0} is {1}% finished loading...\n".format(datasource, load_status))
-        timeleft = timeout_at - time.time()
-        time.sleep(min(5, timeleft))
-      else:
+      if time.time() >= timeout_at:
         raise Exception("{0} was not loaded in time!".format(datasource))
+      if not args.quiet:
+        sys.stderr.write("{0} is {1}% finished loading...\n".format(datasource, load_status))
+      timeleft = timeout_at - time.time()
+      time.sleep(min(5, timeleft))
 
 def main():
   parser = argparse.ArgumentParser(description='Post Druid indexing tasks.')

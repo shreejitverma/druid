@@ -35,7 +35,9 @@ contributors = set()
 
 # Get all users who created a closed issue or merged PR for a given milestone
 while not done:
-  resp = requests.get("https://api.github.com/repos/apache/druid/issues?milestone=%s&state=closed&page=%s" % (milestone_num, page_counter))
+  resp = requests.get(
+      f"https://api.github.com/repos/apache/druid/issues?milestone={milestone_num}&state=closed&page={page_counter}"
+  )
 
   if "Link" in resp.headers:
     pagination_link = resp.headers["Link"]
@@ -58,4 +60,4 @@ while not done:
 # doesn't work as-is for python2, the contributor names are "unicode" instead of "str" in python2
 contributors = sorted(contributors, key=str.lower)
 for contributor_name in contributors:
-  print("@%s" % contributor_name)
+  print(f"@{contributor_name}")

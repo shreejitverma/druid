@@ -25,21 +25,21 @@ import concurrent.futures
 def generate_report(module_path, report_orig_path, report_out_path):
     is_dir = os.path.isdir(module_path)
     if not is_dir:
-        print("{} is not a directory".format(module_path))
+        print(f"{module_path} is not a directory")
         return
 
     os.makedirs(report_out_path, exist_ok=True)
 
     try:
-        print("Generating report for {}".format(module_path))
+        print(f"Generating report for {module_path}")
         # This command prints lots of false errors. Here, we redirect stdout and stderr to avoid them.
         command = "mvn -Ddependency.locations.enabled=false -Ddependency.details.enabled=false project-info-reports:dependencies"
         subprocess.check_output(command, cwd=module_path, shell=True)
-        command = "cp -r {} {}".format(report_orig_path, report_out_path)
+        command = f"cp -r {report_orig_path} {report_out_path}"
         subprocess.check_output(command, cwd=module_path, shell=True)
-        print("Generated report for {} in {}".format(module_path, report_out_path))
+        print(f"Generated report for {module_path} in {report_out_path}")
     except Exception as e:
-        print("Encountered error [{}] when generating report for {}".format(e, module_path))
+        print(f"Encountered error [{e}] when generating report for {module_path}")
 
 
 def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
@@ -57,15 +57,15 @@ def generate_reports(druid_path, tmp_path, exclude_ext, num_threads):
     if not exclude_ext:
         extensions_core_path = os.path.join(druid_path, "extensions-core")
         extension_dirs = os.listdir(extensions_core_path)
-        print("Found {} extensions".format(len(extension_dirs)))
+        print(f"Found {len(extension_dirs)} extensions")
         for extension_dir in extension_dirs:
-            print("extension dir: {}".format(extension_dir))
+            print(f"extension dir: {extension_dir}")
             extension_path = os.path.join(extensions_core_path, extension_dir)
             if not os.path.isdir(extension_path):
-                print("{} is not a directory".format(extension_path))
+                print(f"{extension_path} is not a directory")
                 continue
 
-            extension_report_dir = "{}/{}".format(license_ext_path, extension_dir)
+            extension_report_dir = f"{license_ext_path}/{extension_dir}"
             script_args.append((extension_path, os.path.join(extension_path, "target", "site"), extension_report_dir))
 
     print("Generating dependency reports")

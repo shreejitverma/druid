@@ -48,21 +48,21 @@ web_console_jobs = ['web console', 'web console end-to-end test']
 def check_ignore(file):
     is_always_ignore = True in (file.startswith(prefix) for prefix in ignore_prefixes)
     if is_always_ignore:
-        print("found ignorable file change: {}".format(file))
+        print(f"found ignorable file change: {file}")
     return is_always_ignore
 
 
 def check_docs(file):
     is_docs = True in (file.startswith(prefix) for prefix in docs_prefixes)
     if is_docs:
-        print("found docs file change: {}".format(file))
+        print(f"found docs file change: {file}")
     return is_docs
 
 
 def check_console(file):
     is_console = True in (file.startswith(prefix) for prefix in web_console_prefixes)
     if is_console:
-        print("found web-console file change: {}".format(file))
+        print(f"found web-console file change: {file}")
     return is_console
 
 
@@ -135,21 +135,17 @@ if __name__ == '__main__':
 
     # when run by travis, we run this script without arguments, so collect the test suite name from environment
     # variables. if it doesn't exist, fail
-    if len(sys.argv) == 1:
-        if 'TRAVIS_JOB_NAME' in os.environ:
-            suite_name = os.environ['TRAVIS_JOB_NAME']
-        else:
-            failWithUsage()
-    elif len(sys.argv) == 2:
+    if len(sys.argv) == 1 and 'TRAVIS_JOB_NAME' in os.environ:
+        suite_name = os.environ['TRAVIS_JOB_NAME']
+    elif len(sys.argv) == 1 or len(sys.argv) != 2:
+        failWithUsage()
+    else:
         # to help with testing, can explicitly pass a test suite name
         suite_name = sys.argv[1]
-    else:
-        failWithUsage()
-
-    # we only selectively run CI for PR builds, branch builds such as master and releases will always run all suites
-    is_pr = False
-    if 'TRAVIS_PULL_REQUEST' in os.environ and os.environ['TRAVIS_PULL_REQUEST'] != 'false':
-        is_pr = True
+    is_pr = (
+        'TRAVIS_PULL_REQUEST' in os.environ
+        and os.environ['TRAVIS_PULL_REQUEST'] != 'false'
+    )
 
     if not is_pr:
         print("Not a pull request build, need to run all test suites")
@@ -161,12 +157,9 @@ if __name__ == '__main__':
     all_changed_files = all_changed_files_string.splitlines()
     print("Checking if suite '{}' needs to run test on diff:\n{}".format(suite_name, all_changed_files_string))
 
-    # we should always run all test suites for builds that are not for a pull request
-    needs_run = check_should_run_suite(suite_name, all_changed_files)
-
-    if needs_run:
-        print("Changes detected, need to run test suite '{}'".format(suite_name))
+    if needs_run := check_should_run_suite(suite_name, all_changed_files):
+        print(f"Changes detected, need to run test suite '{suite_name}'")
         sys.exit(1)
 
-    print("No applicable changes detected, can skip test suite '{}'".format(suite_name))
+    print(f"No applicable changes detected, can skip test suite '{suite_name}'")
     sys.exit(0)

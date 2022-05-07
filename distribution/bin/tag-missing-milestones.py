@@ -36,29 +36,35 @@ milestone = sys.argv[4]
 milestone_json = {'milestone': milestone}
 
 # Find all commits between that commit and the current release branch
-command = "git rev-list {}..{}".format(previous_release_commit, new_release_commit)
+command = f"git rev-list {previous_release_commit}..{new_release_commit}"
 all_commits = subprocess.check_output(command, shell=True).decode('UTF-8')
 
 for sha in all_commits.splitlines():
   try:
-    url = "https://api.github.com/repos/apache/druid/commits/{}/pulls".format(sha)
+    url = f"https://api.github.com/repos/apache/druid/commits/{sha}/pulls"
     headers = {'Accept': 'application/vnd.github.groot-preview+json'}
     pull_requests = requests.get(url, headers=headers, auth=(github_username, os.environ["GIT_TOKEN"])).json()
 
-    print("Retrieved {} pull requests associated to commit {}".format(len(pull_requests), sha))
+    print(
+        f"Retrieved {len(pull_requests)} pull requests associated to commit {sha}"
+    )
     for pr in pull_requests:
       pr_number = pr['number']
       if expected_apache_html_url_prefix not in pr['html_url']:
-        print("Skipping Pull Request {} associatd with commit {} since the PR is not from the Apache repo.".format(pr_number, sha))
+        print(
+            f"Skipping Pull Request {pr_number} associatd with commit {sha} since the PR is not from the Apache repo."
+        )
         continue
       if pr['milestone'] is None:
-        print("Tagging Pull Request {} with milestone {}".format(pr_number, milestone))
-        url = "https://api.github.com/repos/apache/druid/issues/{}".format(pr_number)
+        print(f"Tagging Pull Request {pr_number} with milestone {milestone}")
+        url = f"https://api.github.com/repos/apache/druid/issues/{pr_number}"
         requests.patch(url, json=milestone_json, auth=(github_username, os.environ["GIT_TOKEN"]))
       else:
-        print("Skipping Pull Request {} since it's already tagged with milestone {}".format(pr_number, milestone))
+        print(
+            f"Skipping Pull Request {pr_number} since it's already tagged with milestone {milestone}"
+        )
 
   except Exception as e:
-    print("Got exception for commit: {}  ex: {}".format(sha, e))
+    print(f"Got exception for commit: {sha}  ex: {e}")
     continue
 

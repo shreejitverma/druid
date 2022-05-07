@@ -28,10 +28,10 @@ web_console_path = sys.argv[1]
 
 dep_dict = {}
 with open(web_console_path, 'r') as web_console_file:
-    for line in web_console_file.readlines():
-      match_result = re.match('/\*\*\*/ "\./node_modules/([\@\-a-zA-Z0-9_]+)/.*', line)
-      if match_result != None:
-        dependency_name = match_result.group(1)
-        dep_dict[dependency_name] = True
-    for dep in dep_dict:
-        print(dep)
+  for line in web_console_file.readlines():
+    match_result = re.match('/\*\*\*/ "\./node_modules/([\@\-a-zA-Z0-9_]+)/.*', line)
+    if match_result != None:
+      dependency_name = match_result[1]
+      dep_dict[dependency_name] = True
+  for dep in dep_dict:
+      print(dep)

@@ -37,18 +37,24 @@ def print_notice(dependency):
     # 'notices' field
     if 'notice' in dependency:
         # single notice for dependency name, list out all 'libraries' if any, then print notice
-        print_outfile("{} {} {} {}".format(dependencyHeaderLine, dependency['name'], dependency['version'], dependencyHeaderLine))
+        print_outfile(
+            f"{dependencyHeaderLine} {dependency['name']} {dependency['version']} {dependencyHeaderLine}"
+        )
+
         if 'libraries' in dependency:
             for library in dependency['libraries']:
                 for group_id, artifact_id in library.items():
-                    print_outfile("{}.jar".format(artifact_id))
-            print_outfile("{}".format(dependencyHeaderLine))
+                    print_outfile(f"{artifact_id}.jar")
+            print_outfile(f"{dependencyHeaderLine}")
         print_outfile("{}\n\n\n\n".format(dependency['notice']))
     elif 'notices' in dependency:
         # if 'notices' is set instead of 'notice', then it has jar specific notices to print
         for notice_entry in dependency['notices']:
             for jar, notice in notice_entry.items():
-                print_outfile("{} {}-{}.jar {}".format(dependencyHeaderLine, jar, dependency['version'], dependencyHeaderLine))
+                print_outfile(
+                    f"{dependencyHeaderLine} {jar}-{dependency['version']}.jar {dependencyHeaderLine}"
+                )
+
                 print_outfile("{}\n\n\n\n".format(notice))
 
 def generate_notice(source_notice, dependences_yaml):

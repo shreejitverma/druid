@@ -55,40 +55,36 @@ class DependencyReportParser(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         # print("current: {}, start tag: {}, attrs:{} ".format(self.state, tag, attrs))
-        if self.state == "none":
-            if tag == "h2":
-                self.state = "h2_start"
+        if self.state == "none" and tag == "h2":
+            self.state = "h2_start"
 
-        if self.state == "h2_start":
-            if tag == "a":
-                for attr in attrs:
-                    if attr[0] == "name" and (attr[1] == "Project_Dependencies" or attr[1] == "Project_Transitive_Dependencies"):
-                        self.state = "project_dependencies_start"
-                        self.include_classifier = False
+        if self.state == "h2_start" and tag == "a":
+            for attr in attrs:
+                if attr[0] == "name" and attr[1] in [
+                    "Project_Dependencies",
+                    "Project_Transitive_Dependencies",
+                ]:
+                    self.state = "project_dependencies_start"
+                    self.include_classifier = False
 
-        if self.state == "h2_end":
-            if tag == "h3":
-                self.state = "h3_start"
+        if self.state == "h2_end" and tag == "h3":
+            self.state = "h3_start"
 
-        if self.state == "h3_start":
-            if tag == "a":
-                for attr in attrs:
-                    if attr[0] == "name" and attr[1] == "compile":
-                        self.state = "compile_start"
+        if self.state == "h3_start" and tag == "a":
+            for attr in attrs:
+                if attr[0] == "name" and attr[1] == "compile":
+                    self.state = "compile_start"
 
-        if self.state == "h3_end":
-            if tag == "table":
-                self.state = "table_start"
+        if self.state == "h3_end" and tag == "table":
+            self.state = "table_start"
 
-        if self.state == "table_start":
-            if tag == "tr":
-                self.state = "row_start"
-                self.clear_attr()
+        if self.state == "table_start" and tag == "tr":
+            self.state = "row_start"
+            self.clear_attr()
 
-        if self.state == "row_end":
-            if tag == "tr":
-                self.state = "row_start"
-                self.clear_attr()
+        if self.state == "row_end" and tag == "tr":
+            self.state = "row_start"
+            self.clear_attr()
 
         if self.state == "row_start":
             if tag == "td":
@@ -96,67 +92,53 @@ class DependencyReportParser(HTMLParser):
             elif tag == "th":
                 self.state = "th_start"
 
-        if self.state == "th_end":
-            if tag == "th":
-                self.state = "th_start"
+        if self.state == "th_end" and tag == "th":
+            self.state = "th_start"
 
-        if self.state == "td_end":
-            if tag == "td":
-                self.state = "td_start"
+        if self.state == "td_end" and tag == "td":
+            self.state = "td_start"
 
     def handle_endtag(self, tag):
         # print("current: {}, end tag: {}".format(self.state, tag))
-        if self.state == "project_dependencies_start":
-            if tag == "a":
-                self.state = "project_dependencies_end"
+        if self.state == "project_dependencies_start" and tag == "a":
+            self.state = "project_dependencies_end"
 
-        if self.state == "h2_start":
-            if tag == "h2":
-                self.state = "h2_end"
+        if self.state == "h2_start" and tag == "h2":
+            self.state = "h2_end"
 
-        if self.state == "project_dependencies_end":
-            if tag == "h2":
-                self.state = "h2_end"
+        if self.state == "project_dependencies_end" and tag == "h2":
+            self.state = "h2_end"
 
-        if self.state == "compile_start":
-            if tag == "a":
-                self.state = "compile_end"
+        if self.state == "compile_start" and tag == "a":
+            self.state = "compile_end"
 
-        if self.state == "compile_end":
-            if tag == "h3":
-                self.state = "h3_end"
+        if self.state == "compile_end" and tag == "h3":
+            self.state = "h3_end"
 
-        if self.state == "table_start":
-            if tag == "table":
-                self.state = "none"
+        if self.state == "table_start" and tag == "table":
+            self.state = "none"
 
-        if self.state == "td_start":
-            if tag == "td":
-                self.state = "td_end"
-                self.attr_index = self.attr_index + 1
+        if self.state == "td_start" and tag == "td":
+            self.state = "td_end"
+            self.attr_index = self.attr_index + 1
 
-        if self.state == "th_start":
-            if tag == "th":
-                self.state = "th_end"
+        if self.state == "th_start" and tag == "th":
+            self.state = "th_end"
 
-        if self.state == "row_start":
-            if tag == "tr":
-                self.state = "row_end"
+        if self.state == "row_start" and tag == "tr":
+            self.state = "row_end"
 
-        if self.state == "th_end":
-            if tag == "tr":
-                self.state = "row_end"
+        if self.state == "th_end" and tag == "tr":
+            self.state = "row_end"
 
-        if self.state == "td_end":
-            if tag == "tr":
-                self.state = "row_end"
-                # print(json.dumps({"groupId": self.group_id, "artifactId": self.artifact_id, "version": self.version, "classifier": self.classifier, "type": self.dep_type, "license": self.license}))
-                if self.group_id.find("org.apache.druid") < 0:
-                    self.dep_to_license[get_dep_key(self.group_id, self.artifact_id, self.version)] = (self.license, self.druid_module_name)
+        if self.state == "td_end" and tag == "tr":
+            self.state = "row_end"
+            # print(json.dumps({"groupId": self.group_id, "artifactId": self.artifact_id, "version": self.version, "classifier": self.classifier, "type": self.dep_type, "license": self.license}))
+            if self.group_id.find("org.apache.druid") < 0:
+                self.dep_to_license[get_dep_key(self.group_id, self.artifact_id, self.version)] = (self.license, self.druid_module_name)
 
-        if self.state == "row_end":
-            if tag == "table":
-                self.state = "none"
+        if self.state == "row_end" and tag == "table":
+            self.state = "none"
 
     def handle_data(self, data):
         if self.state == "td_start":
@@ -196,126 +178,109 @@ class DependencyReportParser(HTMLParser):
             if self.include_classifier:
                 self.set_license(data)
             else:
-                raise Exception("Unknown attr_index [{}]".format(self.attr_index))
+                raise Exception(f"Unknown attr_index [{self.attr_index}]")
         else:
-            raise Exception("Unknown attr_index [{}]".format(self.attr_index))
+            raise Exception(f"Unknown attr_index [{self.attr_index}]")
 
     def set_license(self, data):
-        if data.upper().find("GPL") < 0:
-            if self.license != 'Apache License version 2.0':
-                self.license = self.compatible_license_names[data]
+        if (
+            data.upper().find("GPL") < 0
+            and self.license != 'Apache License version 2.0'
+        ):
+            self.license = self.compatible_license_names[data]
 
 
 def print_log_to_stderr(string):
     print(string, file=sys.stderr)
 
 def build_compatible_license_names():
-    compatible_licenses = {}
-    compatible_licenses['Apache License, Version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['The Apache Software License, Version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache-2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache 2'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License 2'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache Software License - Version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['The Apache License, Version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License Version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License Version 2'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License v2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License, 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License, version 2.0'] = 'Apache License version 2.0'
-    compatible_licenses['Apache 2.0 License'] = 'Apache License version 2.0'
-    compatible_licenses['Apache License, 2.0'] = 'Apache License version 2.0'
-
-    compatible_licenses['Public Domain'] = 'Public Domain'
-
-    compatible_licenses['BSD-2-Clause License'] = 'BSD-2-Clause License'
-    compatible_licenses['BSD-2-Clause'] = 'BSD-2-Clause License'
-    compatible_licenses['BSD 2-Clause license'] = 'BSD 2-Clause License'
-
-    compatible_licenses['BSD-3-Clause License'] = 'BSD-3-Clause License'
-    compatible_licenses['New BSD license'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD'] = 'BSD-3-Clause License'
-    compatible_licenses['The BSD License'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD licence'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD License'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD-like'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD 3-clause'] = 'BSD-3-Clause License'
-    compatible_licenses['The BSD 3-Clause License'] = 'BSD-3-Clause License'
-    compatible_licenses['Revised BSD'] = 'BSD-3-Clause License'
-    compatible_licenses['New BSD License'] = 'BSD-3-Clause License'
-    compatible_licenses['3-Clause BSD License'] = 'BSD-3-Clause License'
-    compatible_licenses['BSD 3-Clause'] = 'BSD-3-Clause License'
-
-    compatible_licenses['ICU License'] = 'ICU License'
-
-    compatible_licenses['SIL Open Font License 1.1'] = 'SIL Open Font License 1.1'
-
-    compatible_licenses['CDDL 1.1'] = 'CDDL 1.1'
-    compatible_licenses['CDDL/GPLv2+CE'] = 'CDDL 1.1'
-    compatible_licenses['CDDL + GPLv2 with classpath exception'] = 'CDDL 1.1'
-    compatible_licenses['CDDL License'] = 'CDDL 1.1'
-    compatible_licenses['COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0'] = 'CDDL 1.0'
-
-    compatible_licenses['Eclipse Public License 1.0'] = 'Eclipse Public License 1.0'
-    compatible_licenses['The Eclipse Public License, Version 1.0'] = 'Eclipse Public License 1.0'
-    compatible_licenses['Eclipse Public License - Version 1.0'] = 'Eclipse Public License 1.0'
-    compatible_licenses['Eclipse Public License, Version 1.0'] = 'Eclipse Public License 1.0'
-    compatible_licenses['Eclipse Public License v1.0'] = 'Eclipse Public License 1.0'
-    compatible_licenses['EPL 1.0'] = 'Eclipse Public License 1.0'
-
-    compatible_licenses['Eclipse Public License 2.0'] = 'Eclipse Public License 2.0'
-    compatible_licenses['The Eclipse Public License, Version 2.0'] = 'Eclipse Public License 2.0'
-    compatible_licenses['Eclipse Public License - Version 2.0'] = 'Eclipse Public License 2.0'
-    compatible_licenses['Eclipse Public License, Version 2.0'] = 'Eclipse Public License 2.0'
-    compatible_licenses['Eclipse Public License v2.0'] = 'Eclipse Public License 2.0'
-    compatible_licenses['EPL 2.0'] = 'Eclipse Public License 2.0'
-
-    compatible_licenses['Eclipse Distribution License 1.0'] = 'Eclipse Distribution License 1.0'
-    compatible_licenses['Eclipse Distribution License - v 1.0'] = 'Eclipse Distribution License 1.0'
-    compatible_licenses['Eclipse Distribution License v. 1.0'] = 'Eclipse Distribution License 1.0'
-    compatible_licenses['EDL 1.0'] = 'Eclipse Distribution License 1.0'
-
-    compatible_licenses['Mozilla Public License Version 2.0'] = 'Mozilla Public License Version 2.0'
-    compatible_licenses['Mozilla Public License, Version 2.0'] = 'Mozilla Public License Version 2.0'
-
-    compatible_licenses['Creative Commons Attribution 2.5'] = 'Creative Commons Attribution 2.5'
-
-    compatible_licenses['Creative Commons CC0'] = 'Creative Commons CC0'
-    compatible_licenses['CC0'] = 'Creative Commons CC0'
-
-    compatible_licenses['The MIT License'] = 'MIT License'
-    compatible_licenses['MIT License'] = 'MIT License'
-    compatible_licenses['The MIT License (MIT)'] = 'MIT License'
-    compatible_licenses['Bouncy Castle Licence'] = 'MIT License'
-
-    compatible_licenses['-'] = '-'
-    return compatible_licenses
+    return {
+        'Apache License, Version 2.0': 'Apache License version 2.0',
+        'The Apache Software License, Version 2.0': 'Apache License version 2.0',
+        'Apache 2.0': 'Apache License version 2.0',
+        'Apache-2.0': 'Apache License version 2.0',
+        'Apache 2': 'Apache License version 2.0',
+        'Apache License 2': 'Apache License version 2.0',
+        'Apache License 2.0': 'Apache License version 2.0',
+        'Apache Software License - Version 2.0': 'Apache License version 2.0',
+        'The Apache License, Version 2.0': 'Apache License version 2.0',
+        'Apache License version 2.0': 'Apache License version 2.0',
+        'Apache License Version 2.0': 'Apache License version 2.0',
+        'Apache License Version 2': 'Apache License version 2.0',
+        'Apache License v2.0': 'Apache License version 2.0',
+        'Apache License, version 2.0': 'Apache License version 2.0',
+        'Apache 2.0 License': 'Apache License version 2.0',
+        'Apache License, 2.0': 'Apache License version 2.0',
+        'Public Domain': 'Public Domain',
+        'BSD-2-Clause License': 'BSD-2-Clause License',
+        'BSD-2-Clause': 'BSD-2-Clause License',
+        'BSD 2-Clause license': 'BSD 2-Clause License',
+        'BSD-3-Clause License': 'BSD-3-Clause License',
+        'New BSD license': 'BSD-3-Clause License',
+        'BSD': 'BSD-3-Clause License',
+        'The BSD License': 'BSD-3-Clause License',
+        'BSD licence': 'BSD-3-Clause License',
+        'BSD License': 'BSD-3-Clause License',
+        'BSD-like': 'BSD-3-Clause License',
+        'BSD 3-clause': 'BSD-3-Clause License',
+        'The BSD 3-Clause License': 'BSD-3-Clause License',
+        'Revised BSD': 'BSD-3-Clause License',
+        'New BSD License': 'BSD-3-Clause License',
+        '3-Clause BSD License': 'BSD-3-Clause License',
+        'BSD 3-Clause': 'BSD-3-Clause License',
+        'ICU License': 'ICU License',
+        'SIL Open Font License 1.1': 'SIL Open Font License 1.1',
+        'CDDL 1.1': 'CDDL 1.1',
+        'CDDL/GPLv2+CE': 'CDDL 1.1',
+        'CDDL + GPLv2 with classpath exception': 'CDDL 1.1',
+        'CDDL License': 'CDDL 1.1',
+        'COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0': 'CDDL 1.0',
+        'Eclipse Public License 1.0': 'Eclipse Public License 1.0',
+        'The Eclipse Public License, Version 1.0': 'Eclipse Public License 1.0',
+        'Eclipse Public License - Version 1.0': 'Eclipse Public License 1.0',
+        'Eclipse Public License, Version 1.0': 'Eclipse Public License 1.0',
+        'Eclipse Public License v1.0': 'Eclipse Public License 1.0',
+        'EPL 1.0': 'Eclipse Public License 1.0',
+        'Eclipse Public License 2.0': 'Eclipse Public License 2.0',
+        'The Eclipse Public License, Version 2.0': 'Eclipse Public License 2.0',
+        'Eclipse Public License - Version 2.0': 'Eclipse Public License 2.0',
+        'Eclipse Public License, Version 2.0': 'Eclipse Public License 2.0',
+        'Eclipse Public License v2.0': 'Eclipse Public License 2.0',
+        'EPL 2.0': 'Eclipse Public License 2.0',
+        'Eclipse Distribution License 1.0': 'Eclipse Distribution License 1.0',
+        'Eclipse Distribution License - v 1.0': 'Eclipse Distribution License 1.0',
+        'Eclipse Distribution License v. 1.0': 'Eclipse Distribution License 1.0',
+        'EDL 1.0': 'Eclipse Distribution License 1.0',
+        'Mozilla Public License Version 2.0': 'Mozilla Public License Version 2.0',
+        'Mozilla Public License, Version 2.0': 'Mozilla Public License Version 2.0',
+        'Creative Commons Attribution 2.5': 'Creative Commons Attribution 2.5',
+        'Creative Commons CC0': 'Creative Commons CC0',
+        'CC0': 'Creative Commons CC0',
+        'The MIT License': 'MIT License',
+        'MIT License': 'MIT License',
+        'The MIT License (MIT)': 'MIT License',
+        'Bouncy Castle Licence': 'MIT License',
+        '-': '-',
+    }
 
 def get_dep_key(group_id, artifact_id, version):
     return (group_id, artifact_id, version)
 
 def get_version_string(version):
-    if type(version) == str:
-        return version
-    else:
-        return str(version)
+    return version if type(version) == str else str(version)
 
 def find_druid_module_name(dirpath):
     ext_start = dirpath.find("/ext/")
-    if ext_start > 0:
-        # Found an extension
-        subpath = dirpath[(len("/ext/") + ext_start):]
-        ext_name_end = subpath.find("/")
-        if ext_name_end < 0:
-            raise Exception("Can't determine extension name from [{}]".format(dirpath))
-        else:
-            return subpath[0:ext_name_end]
-    else:
+    if ext_start <= 0:
         # Druid core
         return "core"
+    # Found an extension
+    subpath = dirpath[(len("/ext/") + ext_start):]
+    ext_name_end = subpath.find("/")
+    if ext_name_end < 0:
+        raise Exception(f"Can't determine extension name from [{dirpath}]")
+    else:
+        return subpath[:ext_name_end]
 
 def check_licenses(license_yaml, dependency_reports_root):
     # Build a dictionary to facilitate comparing reported licenses and registered ones.

@@ -30,8 +30,7 @@ WELL_KNOWN_PAGES = ["/libraries.html", "/downloads.html", "/community/", "/thank
 
 def normalize_link(source, target):
   dirname = os.path.dirname(source)
-  normalized = os.path.normpath(os.path.join(dirname, target))
-  return normalized
+  return os.path.normpath(os.path.join(dirname, target))
 
 def verify_redirects(docs_directory, redirect_json):
   ok = True
@@ -57,10 +56,8 @@ def verify_markdown(docs_directory):
   # Get list of markdown files.
   markdowns = []
   for root, dirs, files in os.walk(docs_directory):
-    for name in files:
-      if name.endswith('.md'):
-        markdowns.append(os.path.join(root, name))
-
+    markdowns.extend(
+        os.path.join(root, name) for name in files if name.endswith('.md'))
   for markdown_file in markdowns:
     with open(markdown_file, 'r') as f:
       content = f.read()
@@ -79,11 +76,14 @@ def verify_markdown(docs_directory):
       target = re.sub(r'#.*$', '', target)
       target = re.sub(r'\.html$', '.md', target)
       target = re.sub(r'/$', '/index.md', target)
-      if target and not (target.startswith('http://') or target.startswith('https://')):
+      if (target and not target.startswith('http://')
+          and not target.startswith('https://')):
         target_normalized = normalize_link(markdown_file, target)
 
         if not os.path.exists(target_normalized):
-          sys.stderr.write('Page     [' + markdown_file + '] target does not exist: ' + m.group(2) + "\n")
+          sys.stderr.write(
+              f'Page     [{markdown_file}] target does not exist: {m.group(2)}'
+              + "\n")
           ok = False
 
   return ok

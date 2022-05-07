@@ -31,26 +31,20 @@ def get_dep_key(group_id, artifact_id, version):
     return (group_id, artifact_id, version)
 
 def get_version_string(version):
-    if type(version) == str:
-        return version
-    else:
-        return str(version)
+    return version if type(version) == str else str(version)
 
 def module_to_upper(module):
     extensions_offset = module.lower().find("extensions")
     if extensions_offset < 0:
         return module.upper()
     elif extensions_offset == 0:
-        return module[0:len("extensions")].upper() + module[len("extensions"):len(module)]
+        return module[:len("extensions")].upper() + module[len("extensions"):]
     else:
-        raise Exception("Expected extensions at 0, but {}".format(extensions_offset))
+        raise Exception(f"Expected extensions at 0, but {extensions_offset}")
 
 def is_non_empty(dic, key):
     if key in dic and dic[key] is not None:
-        if type(dic[key]) == str:
-            return len(dic[key]) > 0
-        else:
-            return True
+        return len(dic[key]) > 0 if type(dic[key]) == str else True
     else:
         return False
 
@@ -58,14 +52,14 @@ def print_license_phrase(license_phrase):
     remaining = license_phrase
     while len(remaining) > 0:
         if len(remaining) > 120:
-            chars_of_200 = remaining[0:120]
+            chars_of_200 = remaining[:120]
             phrase_len = chars_of_200.rfind(" ")
             if phrase_len < 0:
-                raise Exception("Can't find whitespace in {}".format(chars_of_200))
-            print_outfile("    {}".format(remaining[0:phrase_len]))
+                raise Exception(f"Can't find whitespace in {chars_of_200}")
+            print_outfile(f"    {remaining[:phrase_len]}")
             remaining = remaining[phrase_len:]
         else:
-            print_outfile("    {}".format(remaining))
+            print_outfile(f"    {remaining}")
             remaining = ""
 
 def print_license(license):
@@ -74,17 +68,17 @@ def print_license(license):
         license_phrase += " contains"
     elif license['license_category'] == "binary":
         license_phrase += " bundles"
-    license_phrase += " {}".format(license['name'])
+    license_phrase += f" {license['name']}"
     if is_non_empty(license, 'version'):
-        license_phrase += " version {}".format(license['version'])
+        license_phrase += f" version {license['version']}"
     if is_non_empty(license, 'copyright'):
-        license_phrase += ", copyright {}".format(license['copyright'])
+        license_phrase += f", copyright {license['copyright']}"
     if is_non_empty(license, 'additional_copyright_statement'):
-        license_phrase += ", {}".format(license['additional_copyright_statement'])
+        license_phrase += f", {license['additional_copyright_statement']}"
     if license['license_name'] != 'Apache License version 2.0':
-        license_phrase += " which is available under {}".format(license['license_name'])
+        license_phrase += f" which is available under {license['license_name']}"
     if is_non_empty(license, 'additional_license_statement'):
-        license_phrase += ", {}".format(license['additional_license_statement'])
+        license_phrase += f", {license['additional_license_statement']}"
     if is_non_empty(license, 'license_file_path'):
         license_file_list = []
         if type(license['license_file_path']) == list:
@@ -92,17 +86,17 @@ def print_license(license):
         else:
             license_file_list.append(license['license_file_path'])
         if len(license_file_list) == 1:
-            license_phrase += ". For details, see {}".format(license_file_list[0])
+            license_phrase += f". For details, see {license_file_list[0]}"
         else:
             license_phrase += ". For details, "
             for each_file in license_file_list:
                 if each_file == license_file_list[-1]:
-                    license_phrase += ", and {}".format(each_file)
+                    license_phrase += f", and {each_file}"
                 elif each_file == license_file_list[0]:
-                    license_phrase += "see {}".format(each_file)
+                    license_phrase += f"see {each_file}"
                 else:
-                    license_phrase += ", {}".format(each_file)
-    
+                    license_phrase += f", {each_file}"
+
     license_phrase += "."
 
     print_license_phrase(license_phrase)
@@ -111,29 +105,27 @@ def print_license(license):
         for source_path in license['source_paths']:
             if type(source_path) is dict:
                 for class_name, path in source_path.items():
-                    print_outfile("      {}:".format(class_name))
-                    print_outfile("      * {}".format(path))
+                    print_outfile(f"      {class_name}:")
+                    print_outfile(f"      * {path}")
             else:
-                print_outfile("      * {}".format(source_path))
+                print_outfile(f"      * {source_path}")
 
     if 'libraries' in license:
         for library in license['libraries']:
             if type(library) is not dict:
-                raise Exception("Expected dict but got {}[{}]".format(type(library), library))
+                raise Exception(f"Expected dict but got {type(library)}[{library}]")
             if len(library) > 1:
-                raise Exception("Expected 1 groupId and artifactId, but got [{}]".format(library))
+                raise Exception(f"Expected 1 groupId and artifactId, but got [{library}]")
             for group_id, artifact_id in library.items():
-                print_outfile("      * {}:{}".format(group_id, artifact_id))
+                print_outfile(f"      * {group_id}:{artifact_id}")
 
 def print_license_name_underbar(license_name):
-    underbar = ""
-    for _ in range(len(license_name)):
-        underbar += "="
+    underbar = "".join("=" for _ in range(len(license_name)))
     print_outfile("{}\n".format(underbar))
 
 def generate_license(apache_license_v2, license_yaml):
     print_log_to_stderr("=== Generating the contents of LICENSE.BINARY file ===\n")
-    
+
     # Print Apache license first.
     print_outfile(apache_license_v2)
     with open(license_yaml, encoding='utf-8') as registry_file:
@@ -158,7 +150,7 @@ def generate_license(apache_license_v2, license_yaml):
         print_license_name_underbar(license_name)
         for license_category, licenses_of_category in licenses_of_name.items():
             for module, licenses in licenses_of_category.items():
-                print_outfile("{}/{}".format(license_category.upper(), module_to_upper(module)))
+                print_outfile(f"{license_category.upper()}/{module_to_upper(module)}")
                 for license in licenses:
                     print_license(license)
                     print_outfile("")

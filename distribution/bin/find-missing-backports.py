@@ -28,10 +28,7 @@ def extract_pr_title_from_commit_message(commit_msg):
     if pr_num_pos < 0:
         pr_num_pos = len(commit_msg)
     backport_pos = commit_msg.find("[Backport]")
-    if backport_pos < 0:
-        backport_pos = 0
-    else:
-        backport_pos = backport_pos + len("[Backport]")
+    backport_pos = 0 if backport_pos < 0 else backport_pos + len("[Backport]")
     return commit_msg[backport_pos:pr_num_pos].strip()
 
 
@@ -46,12 +43,14 @@ def extract_pr_title(pr_json):
 
 def find_missing_backports(pr_jsons, release_pr_subjects):
     for pr in pr_jsons:
-        if pr['milestone'] is not None:
-            if pr['milestone']['number'] == milestone_number:
-                for pr_title_candidate in extract_pr_title(pr):
-                    if pr_title_candidate in release_pr_subjects:
-                        return
-                print("Missing backport found for PR {}, url: {}".format(pr['number'], pr['html_url']))
+        if (
+            pr['milestone'] is not None
+            and pr['milestone']['number'] == milestone_number
+        ):
+            for pr_title_candidate in extract_pr_title(pr):
+                if pr_title_candidate in release_pr_subjects:
+                    return
+            print(f"Missing backport found for PR {pr['number']}, url: {pr['html_url']}")
 
 
 def find_next_url(links):
@@ -60,10 +59,9 @@ def find_next_url(links):
         if link.find("rel=\"next\"") >= 0:
             match_result = re.match("<https.*>", link)
             if match_result is None:
-                raise Exception("Next link[{}] is found but can't find url".format(link))
-            else:
-                url_holder = match_result.group(0)
-                return url_holder[1:-1]
+                raise Exception(f"Next link[{link}] is found but can't find url")
+            url_holder = match_result[0]
+            return url_holder[1:-1]
     return None
 
 
@@ -79,19 +77,23 @@ release_branch = sys.argv[3]
 milestone_number = int(sys.argv[4])
 
 master_branch = "master"
-command = "git log {}..{} --oneline | tail -1".format(master_branch, previous_branch)
+command = f"git log {master_branch}..{previous_branch} --oneline | tail -1"
 
 # Find the commit where the previous release branch was cut from master
 previous_branch_first_commit = subprocess.check_output(command, shell=True).decode('UTF-8')
 match_result = re.match("(\w+) .*", previous_branch_first_commit)
 if match_result is None:
     raise Exception("Can't find the first commit of the previous release.")
-previous_branch_first_commit = match_result.group(1)
+previous_branch_first_commit = match_result[1]
 
-print("Previous branch: {}, first commit: {}".format(previous_branch, previous_branch_first_commit))
+print(
+    f"Previous branch: {previous_branch}, first commit: {previous_branch_first_commit}"
+)
+
 
 # Find all commits between that commit and the current release branch
-command = "git log --pretty=tformat:%s {}..{}".format(previous_branch_first_commit, release_branch)
+command = f"git log --pretty=tformat:%s {previous_branch_first_commit}..{release_branch}"
+
 all_release_commits = subprocess.check_output(command, shell=True).decode('UTF-8')
 
 release_pr_subjects = set()

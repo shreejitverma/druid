@@ -28,7 +28,7 @@ def get_header_level(line):
     return count
 
 def make_link_text(prefix, text):
-    return "{}-{}".format(prefix, urllib.parse.quote_plus(text.lower().replace(' ', '-')))
+    return f"{prefix}-{urllib.parse.quote_plus(text.lower().replace(' ', '-'))}"
 
 def process_release_notes(release_version, release_notes, outfile):
     """
@@ -67,7 +67,7 @@ def process_release_notes(release_version, release_notes, outfile):
             prefixes = []
             for line in file:
                 header_level = get_header_level(line)
-                header_text = line[header_level + 1:len(line) - 1]
+                header_text = line[header_level + 1:-1]
                 if (header_level > 0 and "<a name=" not in line):
                     if header_level > current_level:
                         levels.append(current_level)
@@ -86,15 +86,11 @@ def process_release_notes(release_version, release_notes, outfile):
                     current_prefix = link_text
 
                     print(
-                        "{} <a name=\"{}\" href=\"#{}\">#</a> {}".format(
-                            line[0:header_level],
-                            link_text,
-                            link_text,
-                            line[header_level + 1:]
-                        ),
+                        f'{line[:header_level]} <a name="{link_text}" href="#{link_text}">#</a> {line[header_level + 1:]}',
                         file=outfile,
-                        end = ''
+                        end='',
                     )
+
                 else:
                     print(line, file=outfile, end = '')
     return

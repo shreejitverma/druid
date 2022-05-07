@@ -33,14 +33,14 @@ def main():
     timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     r = random.randint(1, 4)
-    if r == 1 or r == 2:
+    if r in [1, 2]:
       page = '/'
     elif r == 3:
       page = '/list'
     else:
-      page = '/get/' + str(random.randint(1, 99))
+      page = f'/get/{str(random.randint(1, 99))}'
 
-    server = 'www' + str(random.randint(1, 5)) + '.example.com'
+    server = f'www{str(random.randint(1, 5))}.example.com'
 
     latency = max(1, random.gauss(80, 40))
 
